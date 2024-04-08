@@ -237,4 +237,5 @@ if __name__ == "__main__":
   nest_asyncio.apply()
 
   # Run the uvicorn server
-  uvicorn.run("app:app", port=8000, reload=True)
+  #uvicorn.run("app:app", port=8000, reload=True)
+  uvicorn.run("app:app", port=8000)
