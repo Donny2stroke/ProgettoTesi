@@ -20,7 +20,7 @@ import warnings
 warnings.filterwarnings('ignore') 
 from pyngrok import ngrok
 from transformers import BitsAndBytesConfig
-
+import asyncio
 
 
 ##### COSTANTI E VARIABILI #####
