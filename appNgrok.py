@@ -18,10 +18,9 @@ import re
 import torch
 import warnings
 warnings.filterwarnings('ignore') 
+import nest_asyncio
 from pyngrok import ngrok
 from transformers import BitsAndBytesConfig
-import asyncio
-import nest-asyncio
 
 ##### COSTANTI E VARIABILI #####
 DB_FAISS_PATH = 'vectorstore/db_faiss'
