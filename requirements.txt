@@ -1,0 +1,16 @@
+fastapi
+starlette
+passlib
+uvicorn
+jinja2
+itsdangerous
+langchain
+bcrypt==4.0.1
+sentence-transformers
+faiss-cpu
+boto3
+python-multipart
+ctransformers
+pypdf
+bitsandbytes
+accelerate
