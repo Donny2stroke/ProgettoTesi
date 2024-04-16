@@ -48,7 +48,7 @@ Se la risposta proviene da documenti diversi, menziona tutte le possibilità ed 
 
 MODEL_NAME = "swap-uniba/LLaMAntino-2-chat-7b-hf-UltraChat-ITA"
 
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True, device_map = 'cuda')
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True, device_map = 'cpu')
 model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, load_in_8bit=True, device_map = 'cuda')
 
 generation_config = GenerationConfig.from_pretrained(MODEL_NAME)
@@ -131,7 +131,7 @@ def set_custom_prompt():
 # Creazione Chain
 def build_chain_custom():
     embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large",
-                                       model_kwargs={'device': 'cuda'})
+                                       model_kwargs={'device': 'cpu'})
     db = FAISS.load_local(DB_FAISS_PATH, embeddings, allow_dangerous_deserialization=True)
     qa_prompt = set_custom_prompt()
     qa = retrieval_qa_chain(qa_prompt, db)
