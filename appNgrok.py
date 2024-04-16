@@ -48,11 +48,22 @@ Se la risposta proviene da documenti diversi, menziona tutte le possibilità ed 
 
 MODEL_NAME = "swap-uniba/LLaMAntino-2-chat-7b-hf-UltraChat-ITA"
 
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True, device_map = 'cpu')
-model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, load_in_8bit=True, device_map = 'cuda')
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.float16,
+)
+
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, device_map = 'auto')
+model = AutoModelForCausalLM.from_pretrained(
+    MODEL_NAME,
+    quantization_config=bnb_config,
+    torch_dtype=torch.float16,
+)
+#model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, load_in_8bit=True, low_cpu_mem_usage=True, device_map = 'auto')
 
 generation_config = GenerationConfig.from_pretrained(MODEL_NAME)
-generation_config.max_new_tokens = 1024
+generation_config.max_new_tokens = 512
 generation_config.temperature = 0.0001
 generation_config.top_p = 0.95
 generation_config.do_sample = True
@@ -69,10 +80,10 @@ text_pipeline = pipeline(
 
 
 ##### ATTIVAZIONE FASTAPI E GESTIONE TEMPLATES #####
-app = FastAPI()
+appNgrok = FastAPI()
 templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
-app.add_middleware(SessionMiddleware, secret_key="your_secret_key")
+appNgrok.mount("/static", StaticFiles(directory="static"), name="static")
+appNgrok.add_middleware(SessionMiddleware, secret_key="your_secret_key")
 
 
 ##### GESTIONE UTENTI E VERIFICA PASSWD #####
@@ -130,8 +141,7 @@ def set_custom_prompt():
 
 # Creazione Chain
 def build_chain_custom():
-    embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large",
-                                       model_kwargs={'device': 'cpu'})
+    embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large")
     db = FAISS.load_local(DB_FAISS_PATH, embeddings, allow_dangerous_deserialization=True)
     qa_prompt = set_custom_prompt()
     qa = retrieval_qa_chain(qa_prompt, db)
@@ -154,7 +164,7 @@ def process_answer(answer, prompt: str):
 chain = build_chain_custom()
 
 ##### ENDPOINT LOGIN #####
-@app.post("/login")
+@appNgrok.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
     user = get_user(username)
     if user is None or not verify_password(password, user.hashed_password):
@@ -170,14 +180,14 @@ async def login(request: Request, username: str = Form(...), password: str = For
     return res
 
 ##### ENDPOINT LOGOUT #####
-@app.get("/logout")
+@appNgrok.get("/logout")
 async def logout(request: Request):
     # Rimozione utente dalla sessione
     request.session.pop('user', None)
     return RedirectResponse(url="/")
 
 ##### ENDPOINT CHAT (PROTETTO AI LOGGATI) #####
-@app.get("/chat")
+@appNgrok.get("/chat")
 async def chat(request: Request):
     # Controlla se l'utente è loggato tramite sessione
     user = request.session.get('user')
@@ -187,7 +197,7 @@ async def chat(request: Request):
     return templates.TemplateResponse("chat.html", {"request": request, "user": user})
 
 ##### ENDPOINT INIZIALE (PROTETTO AI LOGGATI) #####
-@app.get("/")
+@appNgrok.get("/")
 async def read_root(request: Request):
     # Controllo se l'utente è loggato
     user = request.session.get('user')
@@ -199,7 +209,7 @@ async def read_root(request: Request):
         return RedirectResponse(url="/chat")
 
 ##### ENDPOINT RISPOSTA DOMANDA #####
-@app.post("/chat_response")
+@appNgrok.post("/chat_response")
 async def chat_resonse(request: Request, prompt: str = Form(...)):
     result = run_chain(chain=chain, prompt=prompt)
     print("Result:")
@@ -237,4 +247,4 @@ if __name__ == "__main__":
 
   # Run the uvicorn server
   #uvicorn.run("app:app", port=8000, reload=True)
-  uvicorn.run("app:app", port=8000)
+  uvicorn.run("appNgrok:appNgrok", port=8000)
